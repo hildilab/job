@@ -1,0 +1,48 @@
+
+import signal
+import sys
+from flask import Flask
+import multiprocessing
+import logging
+from job.job import (
+    Job_Status, Job_Params, Job_Download, Job_Tools, Job_Submit
+)
+
+
+cfg_file = 'app.cfg'
+if len( sys.argv ) > 1:
+    cfg_file = sys.argv[1]
+
+app = Flask(__name__)
+app.config.from_pyfile( cfg_file )
+
+############################
+# job handling
+############################
+
+
+# !important - allows one to abort via CTRL-C
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+multiprocessing.log_to_stderr( logging.ERROR )
+nworkers = app.config.get( 'JOB_WORKERS', multiprocessing.cpu_count() )
+JOB_POOL = multiprocessing.Pool( nworkers, maxtasksperchild=nworkers )
+
+@app.route('/job/status/<string:jobname>')
+def job_status( jobname ):
+    return Job_Status( jobname, app ) 
+
+@app.route('/job/params/<string:jobname>')
+def job_params( jobname ):
+    return Job_Params(jobname, app)
+
+@app.route('/job/download/<string:jobname>')
+def job_download( jobname ):
+    return Job_Download( jobname, app )
+
+@app.route('/job/tools')
+def job_tools():
+    return Job_Tools(app)
+
+@app.route('/job/submit/', methods=['POST', 'GET'])
+def job_submit():
+    return Job_Submit(app, JOB_POOL)
