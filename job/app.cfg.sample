@@ -1,0 +1,33 @@
+import os
+
+DEBUG = True
+STATIC_DIR = os.path.abspath("./static/")
+LOCAL_DATA_DIRS = {
+	"showcase": os.path.abspath("static/data/showcase/"),
+	"projects": os.path.abspath("/home/arose/projects/"),
+	"test_data": os.path.abspath("/home/arose/dev/test_data/"),
+	"test": os.path.abspath("static/data/test/")
+}
+MAX_CONTENT_LENGTH = 64 * 1024 * 1024
+PROXY = 'proxy.charite.de:888'
+REQUIRE_AUTH = False
+
+import basekit
+TOOLS = {
+	"msms": basekit.msms.Msms,
+	"pdb2pqr": basekit.apbs.Pdb2pqr,
+	"apbs": basekit.apbs.Apbs,
+	"brix2map": basekit.mapman.BrixToMap,
+	"voronoia": basekit.voronoia.Voronoia,
+}
+
+JOB_DIR = os.path.abspath("./static/tmp/")
+JOB_WORKERS = 4
+
+ENV = {
+	"DISPLAY": ":0.0"
+}
+
+PATH = [
+	# e.g. path to msms, apbs
+]

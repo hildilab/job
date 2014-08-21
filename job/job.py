@@ -21,7 +21,24 @@ RUNNING_JOBS = {}
 logging.basicConfig( level=logging.DEBUG )
 LOG = logging.getLogger( 'job' )
 LOG.setLevel( logging.DEBUG )
+def boolean(string):
+    """
+    interprets a given string as a boolean:
+        * False: '0', 'f', 'false', 'no', 'off'
+        * True: '1', 't', 'true', 'yes', 'on'
 
+    >>> boolean('true')
+    True
+    >>> boolean('false')
+    False
+    """
+    string = str(string).lower()
+    if string in ['0', 'f', 'false', 'no', 'off']:
+        return False
+    elif string in ['1', 't', 'true', 'yes', 'on']:
+        return True
+    else:
+        raise ValueError()
 
 def job_done( jobname, tool_list ):
     LOG.info( "JOB DONE: %s - %s" % (jobname, tool_list[0].output_dir) )
@@ -57,7 +74,6 @@ def _job_submit( is_form, app, JOB_POOL ):
     # raise Exception("foo")
 
     def get( name, params ):
-        print name
         default = params.get( "default", "" )
         attr = "form" if is_form else "args"
         if params.get( "nargs" ) or params.get( "action" ) == "append":
@@ -69,7 +85,6 @@ def _job_submit( is_form, app, JOB_POOL ):
                 d = default
         else:
             d = getattr( request, attr ).get( name, default )
-        print d
         return d
     jobtype = get( '__type__', {} )
     Tool = app.config['TOOLS'].get( jobtype )
@@ -83,23 +98,18 @@ def _job_submit( is_form, app, JOB_POOL ):
                 continue
             if params["type"] == "file":
                 fpath = input_path( name, params, output_dir )
-                if is_form:
-                    for file_storage in request.files.getlist( name ):
-                        if file_storage:
-                            file_storage.save( fpath )
-                            break   # only save the first file
-                    else:
-                        print "file '%s' not found, trying url" % name
-                        url = get( name, params )
-                        d = retrieve_url( url )
-                        with open( fpath, "w" ) as fp:
-                            fp.write( d )
+
+                for file_storage in request.files.getlist( name ):
+                    if file_storage:
+                        file_storage.save( fpath )
+                        break   # only save the first file
                 else:
-                    # there can be only a single jmol file
-                    # for the whole form
-                    if params["ext"] == "jmol":
-                        with open( fpath, "w" ) as fp:
-                            fp.write( request.stream.read() )
+                    print "file '%s' not found, trying url" % name
+                    url = get( name, params )
+                    d = retrieve_url( url )
+                    with open( fpath, "w" ) as fp:
+                        fp.write( d )
+
                 d = str( fpath )
             elif params["type"] == "float":
                 d = float( get( name, params ) )
