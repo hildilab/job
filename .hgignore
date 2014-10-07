@@ -4,3 +4,6 @@ dist/*
 job.egg*
 job/app.cfg
 *pyc
+job.wsgi
+app/app.cfg
+apache.config
