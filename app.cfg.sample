@@ -16,20 +16,38 @@ REQUIRE_AUTH = False
 
 import basekit
 TOOLS = {
-	"msms": basekit.msms.Msms,
-	"pdb2pqr": basekit.apbs.Pdb2pqr,
-	"apbs": basekit.apbs.Apbs,
 	"brix2map": basekit.mapman.BrixToMap,
-	"voronoia": basekit.voronoia.Voronoia,
+    "msms": basekit.msms.Msms,
+    "pdb2pqr": basekit.apbs.Pdb2pqr,
+    "apbs": basekit.apbs.Apbs,
+    "voronoia": basekit.voronoia.Voronoia,
+    "linkit": basekit.linker.LinkIt,
+    "multi-linkit": basekit.linker.MultiLinkIt,
+    "linkit-density": basekit.linker.LinkItDensity,
+    "capture": basekit.capture.Capture,
+    "dowser": basekit.dowser.Dowser,
+    "dowser-repeat": basekit.dowser.DowserRepeat
 }
 
 JOB_DIR = os.path.abspath("./static/tmp/")
 JOB_WORKERS = 4
 
 ENV = {
-	"DISPLAY": ":0.0"
+	"DISPLAY": ":0.0",
+    "DOWSER": "/home/arose/dev/contrib/dowser",
+    "DOW_MACH": "linux",
+    "SPIDER_DIR": "/home/arose/dev/contrib/spider/spiderweb.21.02/spider/",
+    "SPBIN_DIR": "/home/arose/dev/contrib/spider/spiderweb.21.02/spider/bin/",
+    "SPMAN_DIR": "/home/arose/dev/contrib/spider/spiderweb.21.02/spider/man/",
+    "SPPROC_DIR": "/home/arose/dev/contrib/spider/spiderweb.21.02/spider/proc/",
+    "BASEKIT_DATA": "/home/arose/dev/data",
+    "LINKIT_DIR": "/home/arose/dev/data/linkerdb/"
 }
 
 PATH = [
-	# e.g. path to msms, apbs
+	"/home/arose/dev/contrib/msms/",
+    "/home/arose/dev/contrib/dowser/bin/",
+    "/home/arose/dev/contrib/dowser/bin/linux",
+    "/home/arose/dev/contrib/pdb2pqr/pdb2pqr-1.8/",
+    "/home/arose/dev/contrib/spider/spiderweb.21.02/spider/bin"
 ]
