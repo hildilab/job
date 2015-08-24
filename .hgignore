@@ -5,3 +5,5 @@ app.cfg
 *.pyc
 *.sublime-project
 *.sublime-workspace
+
+tmp/*
