@@ -250,21 +250,16 @@ def job_tools():
     tools = collections.defaultdict( dict )
     for name, Tool in app.config['TOOLS'].iteritems():
         tools[ name ][ 'args' ] = Tool.args
-        attr = {}
-        if hasattr( Tool, "provi_tmpl" ):
-            attr[ 'provi_file' ] = Tool.provi_tmpl
-        tools[ name ][ 'attr' ] = attr
         tools[ name ][ 'docu' ] = Tool.__doc__
     return jsonify( tools )
 
 @app.route('/submit/', methods=['POST', 'GET'])
 def job_submit():
-    is_form = request.args.get("POST") != "_PNGJBIN_"
+    is_form = True
     print "is_form: " + str(is_form)
     print request.args
     print request.form
     print request.json
-
     try:
         return _job_submit( is_form, app, JOB_POOL )
     except Exception as e:
