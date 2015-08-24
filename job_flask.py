@@ -29,7 +29,6 @@ from flask import url_for, redirect
 from flask import jsonify
 from werkzeug import secure_filename
 
-
 RUNNING_JOBS = {}
 logging.basicConfig( level=logging.DEBUG )
 LOG = logging.getLogger( 'job' )
@@ -45,7 +44,6 @@ app.config.from_pyfile( cfg_file )
 os.environ.update( app.config.get( "ENV", {} ) )
 os.environ["PATH"] += ":" + ":".join( app.config.get( "PATH", [] ) )
 os.environ["HTTP_PROXY"] = app.config.get( "PROXY", "" )
-
 
 ############################
 # utils
@@ -79,7 +77,6 @@ def decode( data, encoding ):
             print str(e)
     return data
 
-
 ############################
 # cache control
 ############################
@@ -97,39 +94,6 @@ def nocache(f):
         return resp
     return functools.update_wrapper(new_func, f)
 
-
-############################
-# basic auth
-############################
-
-def check_auth(username, password):
-    """This function is called to check if a username /
-    password combination is valid.
-    """
-    return username == 'test' and password == 'test'
-
-
-def authenticate():
-    """Sends a 401 response that enables basic auth"""
-    return Response(
-        'Could not verify your access level for that URL.\n'
-        'You have to login with proper credentials', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'}
-    )
-
-
-# use as after a route decorator
-def requires_auth(f):
-    @functools.wraps(f)
-    def decorated(*args, **kwargs):
-        if app.config.get('REQUIRE_AUTH', False):
-            auth = request.authorization
-            if not auth or not check_auth(auth.username, auth.password):
-                return authenticate()
-        return f(*args, **kwargs)
-    return decorated
-
-
 ############################
 # job handling
 ############################
@@ -145,7 +109,6 @@ def call( tool ):
         print e
     return tool
 
-
 def job_start( jobname, tool, JOB_POOL ):
     LOG.info( "JOB STARTED: %s - %s" % (jobname, tool.output_dir) )
     RUNNING_JOBS[ jobname ] = True
@@ -153,11 +116,11 @@ def job_start( jobname, tool, JOB_POOL ):
         call, [ tool ], callback=functools.partial( job_done, jobname )
     )
 
-def input_path( name, params, output_dir ):
+def get_input_path( name, params, output_dir ):
     ext = params.get("ext", "dat")
     return os.path.join( output_dir, "input_%s.%s" % ( name, ext ) )
 
-def job_dir( jobname, app, create=False ):
+def get_job_dir( jobname, app, create=False ):
     output_dir = os.path.join( app.config['JOB_DIR'], jobname )
     output_dir = os.path.abspath( output_dir )
     if not os.path.exists( output_dir ):
@@ -165,8 +128,6 @@ def job_dir( jobname, app, create=False ):
     return output_dir
 
 def _job_submit( is_form, app, JOB_POOL ):
-    # raise Exception("foo")
-
     def get( name, params ):
         default = params.get( "default", "" )
         attr = "form" if is_form else "args"
@@ -184,14 +145,14 @@ def _job_submit( is_form, app, JOB_POOL ):
     Tool = app.config['TOOLS'].get( jobtype )
     if Tool:
         jobname = jobtype + "_" + str( uuid.uuid4() )
-        output_dir = job_dir( jobname, app, create=True )
+        output_dir = get_job_dir( jobname, app, create=True )
         args = []
         kwargs = {}
         for name, params in Tool.args.iteritems():
             if params.get("group"):
                 continue
             if params["type"] == "file":
-                fpath = input_path( name, params, output_dir )
+                fpath = get_input_path( name, params, output_dir )
 
                 for file_storage in request.files.getlist( name ):
                     if file_storage:
@@ -232,20 +193,19 @@ def _job_submit( is_form, app, JOB_POOL ):
         return jsonify({ "jobname": jobname })
     return "ERROR"
 
-
 # !important - allows one to abort via CTRL-C
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 multiprocessing.log_to_stderr( logging.ERROR )
 nworkers = app.config.get( 'JOB_WORKERS', multiprocessing.cpu_count() )
 JOB_POOL = multiprocessing.Pool( nworkers, maxtasksperchild=nworkers )
 
-@app.route('/job/status/<string:jobname>')
+@app.route('/status/<string:jobname>')
 def job_status( jobname ):
     jobname = secure_filename( jobname )
     jobtype, jobid = jobname.split("_")
     Tool = app.config['TOOLS'].get( jobtype, None )
     if Tool:
-        output_dir = job_dir( jobname, app )
+        output_dir = get_job_dir( jobname, app )
         tool = Tool( output_dir=output_dir, fileargs=True, run=False )
         return jsonify({
             "running": RUNNING_JOBS.get( jobname, False ),
@@ -254,42 +214,24 @@ def job_status( jobname ):
         })
     return ""
 
-@app.route('/job/getfile/<string:jobname>/<string:filename>')
-def job_get_file( jobname, filename ):
-    jobname = secure_filename( jobname )
-    filename = secure_filename( filename )
-    jobtype, jobid = jobname.split("_")
-    Tool = app.config['TOOLS'].get( jobtype, None )
-    if Tool:
-        output_dir = job_dir( jobname, app )
-        tool = Tool( output_dir=output_dir, fileargs=True, run=False )
-        for f in tool.output_files:
-            if filename == os.path.basename(f):
-                return send_file(
-                    f,
-                    attachment_filename="%s" % os.path.basename(f),
-                    as_attachment=True
-                )
-    return ""
-
-@app.route('/job/params/<string:jobname>')
+@app.route('/params/<string:jobname>')
 def job_params( jobname ):
     jobname = secure_filename( jobname )
     jobtype, jobid = jobname.split("_")
     Tool = app.config['TOOLS'].get( jobtype, None )
     if Tool:
-        output_dir = job_dir( jobname, app )
+        output_dir = get_job_dir( jobname, app )
         tool = Tool( output_dir=output_dir, fileargs=True, run=False )
         return jsonify( tool.params )
     return ""
 
-@app.route('/job/download/<string:jobname>')
+@app.route('/download/<string:jobname>')
 def job_download( jobname ):
     jobname = secure_filename( jobname )
     jobtype, jobid = jobname.split("_")
     Tool = app.config['TOOLS'].get( jobtype, None )
     if Tool:
-        output_dir = job_dir( jobname, app )
+        output_dir = get_job_dir( jobname, app )
         tool = Tool( output_dir=output_dir, fileargs=True, run=False )
         fp = tempfile.NamedTemporaryFile( "w+b" )
 
@@ -303,8 +245,7 @@ def job_download( jobname ):
         )
     return ""
 
-
-@app.route('/job/tools')
+@app.route('/tools')
 def job_tools():
     tools = collections.defaultdict( dict )
     for name, Tool in app.config['TOOLS'].iteritems():
@@ -316,7 +257,7 @@ def job_tools():
         tools[ name ][ 'docu' ] = Tool.__doc__
     return jsonify( tools )
 
-@app.route('/job/submit/', methods=['POST', 'GET'])
+@app.route('/submit/', methods=['POST', 'GET'])
 def job_submit():
     is_form = request.args.get("POST") != "_PNGJBIN_"
     print "is_form: " + str(is_form)
@@ -330,52 +271,80 @@ def job_submit():
         print e
         return "ERROR"
 
+@app.route( '/dir/<string:jobname>/' )
+@app.route( '/dir/<string:jobname>/<path:subdir>' )
+def job_dir( jobname="", subdir="" ):
+    jobname = jobname.encode( "utf-8" )
+    subdir = subdir.encode( "utf-8" )
+    dir_content = []
+    if jobname == "":
+        return ""
+    dir_path = os.path.join(
+        app.config['JOB_DIR'], jobname, subdir
+    ).encode( "utf-8" )
+    if subdir:
+        dir_content.append({
+            'name': '..',
+            'path': os.path.split( os.path.join( subdir ) )[0],
+            'dir': True
+        })
+    for fname in sorted( os.listdir( dir_path ) ):
+        fname = fname.decode( "utf-8" ).encode( "utf-8" )
+        if not fname.startswith('.'):
+            fpath = os.path.join( dir_path, fname )
+            if os.path.isfile( fpath ):
+                dir_content.append({
+                    'name': fname,
+                    'path': os.path.join( subdir, fname ),
+                    'size': os.path.getsize( fpath )
+                })
+            else:
+                dir_content.append({
+                    'name': fname,
+                    'path': os.path.join( subdir, fname ),
+                    'dir': True
+                })
+    return json.dumps( dir_content )
+
+@app.route( '/file/<string:jobname>/<path:filename>' )
+def job_file( jobname="", filename="" ):
+    dir_path = os.path.join(
+        app.config['JOB_DIR'], jobname
+    ).encode( "utf-8" )
+    return send_from_directory( dir_path, filename )
+
 ############################
 # CORS handling (by http://coalkids.github.io/author/christophe-serafin.html)
 ############################
 
-
 @app.before_request
 def option_autoreply():
     """ Always reply 200 on OPTIONS request """
-
     if request.method == 'OPTIONS':
         resp = app.make_default_options_response()
-
         headers = None
         if 'ACCESS_CONTROL_REQUEST_HEADERS' in request.headers:
             headers = request.headers['ACCESS_CONTROL_REQUEST_HEADERS']
-
         h = resp.headers
-
         # Allow the origin which made the XHR
         h['Access-Control-Allow-Origin'] = request.headers['Origin']
         # Allow the actual method
         h['Access-Control-Allow-Methods'] = request.headers['Access-Control-Request-Method']
         # Allow for 10 seconds
         h['Access-Control-Max-Age'] = "10"
-
         # We also keep current headers
         if headers is not None:
             h['Access-Control-Allow-Headers'] = headers
-
         return resp
-
 
 @app.after_request
 def set_allow_origin(resp):
     """ Set origin for GET, POST, PUT, DELETE requests """
-
     h = resp.headers
-
     # Allow crossdomain for other HTTP Verbs
     if request.method != 'OPTIONS' and 'Origin' in request.headers:
         h['Access-Control-Allow-Origin'] = "*"#request.headers['Origin']
-
-
     return resp
-
-
 
 ############################
 # main
@@ -388,5 +357,5 @@ if __name__ == '__main__':
         port=app.config.get('PORT', 5000),
         threaded=True,
         processes=1,
-        extra_files=['app.cfg', 'app2.cfg']
+        extra_files=['app.cfg']
     )

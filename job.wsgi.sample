@@ -2,18 +2,14 @@
 # configuration for the job wsgi app
 
 # path to the directory where job_flask.py is located
-APP_PATH = '/home/arose/dev/repos/job/app/'
+APP_PATH = '/home/arose/dev/repos/job/'
 
 # leave empty if no virtualenv is needed
-APP_ENV = '/home/arose/dev/envs/bin/'
-
-
-
+APP_ENV = ''
 
 #####
 # do not change anything below unless you are sure
 # http://flask.pocoo.org/docs/deploying/mod_wsgi/
-
 
 import os
 
@@ -29,5 +25,3 @@ if APP_PATH not in sys.path:
 sys.stdout = sys.stderr
 
 from job_flask import app as application
-
-

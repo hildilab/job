@@ -1,9 +1,7 @@
 syntax: glob
-build/*
-dist/*
-job.egg*
-job/app.cfg
-*pyc
-job.wsgi
-app/app.cfg
-apache.config
+
+app.cfg
+
+*.pyc
+*.sublime-project
+*.sublime-workspace
