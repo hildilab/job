@@ -249,7 +249,7 @@ def job_download( jobname ):
 def job_tools():
     tools = collections.defaultdict( dict )
     for name, Tool in app.config['TOOLS'].iteritems():
-        tools[ name ][ 'args' ] = Tool.args
+        tools[ name ][ 'args' ] = Tool.args.values()
         tools[ name ][ 'docu' ] = Tool.__doc__
     return jsonify( tools )
 
