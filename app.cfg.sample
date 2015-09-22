@@ -1,18 +1,10 @@
 import os
 
 DEBUG = True
-HOST = "127.0.1.1"#"0.0.0.0"
+HOST = "127.0.1.1"  # "0.0.0.0"
 PORT = 5000
-STATIC_DIR = os.path.abspath("./static/")
-LOCAL_DATA_DIRS = {
-	"showcase": os.path.abspath("static/data/showcase/"),
-	"projects": os.path.abspath("/home/arose/projects/"),
-	"test_data": os.path.abspath("/home/arose/dev/test_data/"),
-	"test": os.path.abspath("static/data/test/")
-}
 MAX_CONTENT_LENGTH = 64 * 1024 * 1024
-PROXY = 'proxy.charite.de:888'
-REQUIRE_AUTH = False
+PROXY = 'http://proxy.charite.de:888'
 
 import basekit
 TOOLS = {
